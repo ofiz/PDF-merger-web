@@ -22,7 +22,7 @@ function setupEventListeners() {
     // File input change
     fileInput.addEventListener('change', handleFileSelection);
     
-    // Upload area - Multiple event types for maximum compatibility
+    // Upload area click and touch
     uploadArea.addEventListener('click', handleUploadAreaClick);
     uploadArea.addEventListener('touchstart', handleUploadAreaTouch, { passive: true });
     uploadArea.addEventListener('touchend', handleUploadAreaTouchEnd);
@@ -40,33 +40,44 @@ function setupEventListeners() {
 // Handle upload area click
 function handleUploadAreaClick(event) {
     event.preventDefault();
-    console.log('Upload area clicked'); // Debug log
-    triggerFileInput();
+    console.log('Upload area clicked');
+    
+    // Only trigger if it's not from a touch event
+    if (!event.fromTouch) {
+        triggerFileInput();
+    }
 }
 
 // Handle upload area touch start
 function handleUploadAreaTouch(event) {
-    console.log('Upload area touched'); // Debug log
-    // Add visual feedback for touch
+    console.log('Upload area touched');
     uploadArea.style.transform = 'scale(0.98)';
 }
 
 // Handle upload area touch end
 function handleUploadAreaTouchEnd(event) {
     event.preventDefault();
-    console.log('Upload area touch ended'); // Debug log
+    console.log('Upload area touch ended');
+    
     // Reset visual feedback
     uploadArea.style.transform = '';
-    triggerFileInput();
+    
+    // Mark as touch event and trigger file input
+    setTimeout(() => {
+        triggerFileInput();
+    }, 50);
 }
 
-// Trigger file input - Mobile-friendly way
+// Trigger file input
 function triggerFileInput() {
     try {
-        console.log('Triggering file input'); // Debug log
+        console.log('Triggering file input');
         
-        // For iOS devices, create a fresh input element
-        if (/iPhone|iPad|iPod/.test(navigator.userAgent)) {
+        // Check if it's iOS device
+        const isIOS = /iPhone|iPad|iPod/.test(navigator.userAgent);
+        
+        if (isIOS) {
+            // Create fresh input for iOS
             const tempInput = document.createElement('input');
             tempInput.type = 'file';
             tempInput.multiple = true;
@@ -75,14 +86,16 @@ function triggerFileInput() {
             tempInput.style.left = '-9999px';
             tempInput.style.top = '-9999px';
             tempInput.style.opacity = '0';
+            tempInput.style.width = '1px';
+            tempInput.style.height = '1px';
             
             tempInput.addEventListener('change', function(e) {
-                console.log('iOS temp input changed'); // Debug log
+                console.log('iOS temp input changed');
                 handleFileSelection(e);
                 if (document.body.contains(tempInput)) {
                     document.body.removeChild(tempInput);
                 }
-            });
+            }, { once: true });
             
             document.body.appendChild(tempInput);
             
@@ -91,7 +104,7 @@ function triggerFileInput() {
             tempInput.click();
             
         } else {
-            // For other devices, use the original input
+            // For desktop and non-iOS devices, use the original input
             fileInput.focus();
             fileInput.click();
         }
@@ -110,7 +123,7 @@ function triggerFileInput() {
 // Handle file selection
 function handleFileSelection(event) {
     const files = Array.from(event.target.files);
-    console.log('Files selected:', files.length); // Debug log
+    console.log('Files selected:', files.length);
     
     if (files.length > 0) {
         // Filter PDF files
@@ -162,7 +175,7 @@ function handleDrop(event) {
 async function uploadFiles(files) {
     if (files.length === 0) return;
     
-    console.log('Uploading files:', files); // Debug log
+    console.log('Uploading files:', files);
     showLoading(true);
     
     const formData = new FormData();
