@@ -10,7 +10,6 @@ const clearAllBtn = document.getElementById('clearAllBtn');
 const fileCount = document.getElementById('fileCount');
 const toastContainer = document.getElementById('toastContainer');
 const loadingOverlay = document.getElementById('loadingOverlay');
-const browseBtn = document.getElementById('browseBtn');
 
 // Initialize app
 document.addEventListener('DOMContentLoaded', function() {
@@ -23,21 +22,10 @@ function setupEventListeners() {
     // File input change
     fileInput.addEventListener('change', handleFileSelection);
     
-    // Browse button - Multiple event types for mobile compatibility
-    browseBtn.addEventListener('click', handleBrowseClick);
-    browseBtn.addEventListener('touchstart', handleBrowseClick, { passive: true });
-    browseBtn.addEventListener('touchend', (e) => {
-        e.preventDefault();
-        handleBrowseClick(e);
-    });
-    
-    // Upload area - Multiple event types for mobile compatibility
+    // Upload area - Multiple event types for maximum compatibility
     uploadArea.addEventListener('click', handleUploadAreaClick);
-    uploadArea.addEventListener('touchstart', handleUploadAreaClick, { passive: true });
-    uploadArea.addEventListener('touchend', (e) => {
-        e.preventDefault();
-        handleUploadAreaClick(e);
-    });
+    uploadArea.addEventListener('touchstart', handleUploadAreaTouch, { passive: true });
+    uploadArea.addEventListener('touchend', handleUploadAreaTouchEnd);
     
     // Drag and drop
     uploadArea.addEventListener('dragover', handleDragOver);
@@ -49,51 +37,73 @@ function setupEventListeners() {
     document.addEventListener('drop', (e) => e.preventDefault());
 }
 
-// Handle browse button click/touch
-function handleBrowseClick(event) {
+// Handle upload area click
+function handleUploadAreaClick(event) {
     event.preventDefault();
-    event.stopPropagation();
-    console.log('Browse button clicked/touched'); // Debug log
+    console.log('Upload area clicked'); // Debug log
     triggerFileInput();
 }
 
-// Handle upload area click/touch
-function handleUploadAreaClick(event) {
-    // Only trigger if not clicking the browse button
-    if (event.target !== browseBtn && !browseBtn.contains(event.target)) {
-        event.preventDefault();
-        event.stopPropagation();
-        console.log('Upload area clicked/touched'); // Debug log
-        triggerFileInput();
-    }
+// Handle upload area touch start
+function handleUploadAreaTouch(event) {
+    console.log('Upload area touched'); // Debug log
+    // Add visual feedback for touch
+    uploadArea.style.transform = 'scale(0.98)';
+}
+
+// Handle upload area touch end
+function handleUploadAreaTouchEnd(event) {
+    event.preventDefault();
+    console.log('Upload area touch ended'); // Debug log
+    // Reset visual feedback
+    uploadArea.style.transform = '';
+    triggerFileInput();
 }
 
 // Trigger file input - Mobile-friendly way
 function triggerFileInput() {
     try {
-        // Create a temporary input if needed for iOS
-        if (navigator.userAgent.includes('iPhone') || navigator.userAgent.includes('iPad')) {
+        console.log('Triggering file input'); // Debug log
+        
+        // For iOS devices, create a fresh input element
+        if (/iPhone|iPad|iPod/.test(navigator.userAgent)) {
             const tempInput = document.createElement('input');
             tempInput.type = 'file';
             tempInput.multiple = true;
             tempInput.accept = '.pdf';
             tempInput.style.position = 'absolute';
             tempInput.style.left = '-9999px';
+            tempInput.style.top = '-9999px';
+            tempInput.style.opacity = '0';
             
             tempInput.addEventListener('change', function(e) {
+                console.log('iOS temp input changed'); // Debug log
                 handleFileSelection(e);
-                document.body.removeChild(tempInput);
+                if (document.body.contains(tempInput)) {
+                    document.body.removeChild(tempInput);
+                }
             });
             
             document.body.appendChild(tempInput);
+            
+            // Force focus and click
+            tempInput.focus();
             tempInput.click();
+            
         } else {
+            // For other devices, use the original input
+            fileInput.focus();
             fileInput.click();
         }
     } catch (error) {
         console.error('Error triggering file input:', error);
-        // Fallback to original method
-        fileInput.click();
+        // Ultimate fallback
+        try {
+            fileInput.click();
+        } catch (fallbackError) {
+            console.error('Fallback also failed:', fallbackError);
+            showToast('Unable to open file picker. Please try refreshing the page.', 'error');
+        }
     }
 }
 
@@ -101,7 +111,20 @@ function triggerFileInput() {
 function handleFileSelection(event) {
     const files = Array.from(event.target.files);
     console.log('Files selected:', files.length); // Debug log
-    uploadFiles(files);
+    
+    if (files.length > 0) {
+        // Filter PDF files
+        const pdfFiles = files.filter(file => file.type === 'application/pdf');
+        
+        if (pdfFiles.length !== files.length) {
+            showToast('Only PDF files are allowed', 'warning');
+        }
+        
+        if (pdfFiles.length > 0) {
+            uploadFiles(pdfFiles);
+        }
+    }
+    
     // Reset input
     event.target.value = '';
 }
@@ -139,6 +162,7 @@ function handleDrop(event) {
 async function uploadFiles(files) {
     if (files.length === 0) return;
     
+    console.log('Uploading files:', files); // Debug log
     showLoading(true);
     
     const formData = new FormData();
@@ -162,6 +186,7 @@ async function uploadFiles(files) {
             showToast(data.message, 'error');
         }
     } catch (error) {
+        console.error('Upload error:', error);
         showToast('Error uploading files: ' + error.message, 'error');
     } finally {
         showLoading(false);
