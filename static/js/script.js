@@ -10,7 +10,7 @@ const clearAllBtn = document.getElementById('clearAllBtn');
 const fileCount = document.getElementById('fileCount');
 const toastContainer = document.getElementById('toastContainer');
 const loadingOverlay = document.getElementById('loadingOverlay');
-const browseBtn = document.getElementById('browseBtn'); // Added this line
+const browseBtn = document.getElementById('browseBtn');
 
 // Initialize app
 document.addEventListener('DOMContentLoaded', function() {
@@ -23,11 +23,23 @@ function setupEventListeners() {
     // File input change
     fileInput.addEventListener('change', handleFileSelection);
     
-    // Browse button click - THIS IS THE FIX
-    browseBtn.addEventListener('click', () => fileInput.click());
+    // Browse button - Multiple event types for mobile compatibility
+    browseBtn.addEventListener('click', handleBrowseClick);
+    browseBtn.addEventListener('touchstart', handleBrowseClick, { passive: true });
+    browseBtn.addEventListener('touchend', (e) => {
+        e.preventDefault();
+        handleBrowseClick(e);
+    });
+    
+    // Upload area - Multiple event types for mobile compatibility
+    uploadArea.addEventListener('click', handleUploadAreaClick);
+    uploadArea.addEventListener('touchstart', handleUploadAreaClick, { passive: true });
+    uploadArea.addEventListener('touchend', (e) => {
+        e.preventDefault();
+        handleUploadAreaClick(e);
+    });
     
     // Drag and drop
-    uploadArea.addEventListener('click', () => fileInput.click());
     uploadArea.addEventListener('dragover', handleDragOver);
     uploadArea.addEventListener('dragleave', handleDragLeave);
     uploadArea.addEventListener('drop', handleDrop);
@@ -37,9 +49,58 @@ function setupEventListeners() {
     document.addEventListener('drop', (e) => e.preventDefault());
 }
 
+// Handle browse button click/touch
+function handleBrowseClick(event) {
+    event.preventDefault();
+    event.stopPropagation();
+    console.log('Browse button clicked/touched'); // Debug log
+    triggerFileInput();
+}
+
+// Handle upload area click/touch
+function handleUploadAreaClick(event) {
+    // Only trigger if not clicking the browse button
+    if (event.target !== browseBtn && !browseBtn.contains(event.target)) {
+        event.preventDefault();
+        event.stopPropagation();
+        console.log('Upload area clicked/touched'); // Debug log
+        triggerFileInput();
+    }
+}
+
+// Trigger file input - Mobile-friendly way
+function triggerFileInput() {
+    try {
+        // Create a temporary input if needed for iOS
+        if (navigator.userAgent.includes('iPhone') || navigator.userAgent.includes('iPad')) {
+            const tempInput = document.createElement('input');
+            tempInput.type = 'file';
+            tempInput.multiple = true;
+            tempInput.accept = '.pdf';
+            tempInput.style.position = 'absolute';
+            tempInput.style.left = '-9999px';
+            
+            tempInput.addEventListener('change', function(e) {
+                handleFileSelection(e);
+                document.body.removeChild(tempInput);
+            });
+            
+            document.body.appendChild(tempInput);
+            tempInput.click();
+        } else {
+            fileInput.click();
+        }
+    } catch (error) {
+        console.error('Error triggering file input:', error);
+        // Fallback to original method
+        fileInput.click();
+    }
+}
+
 // Handle file selection
 function handleFileSelection(event) {
     const files = Array.from(event.target.files);
+    console.log('Files selected:', files.length); // Debug log
     uploadFiles(files);
     // Reset input
     event.target.value = '';
