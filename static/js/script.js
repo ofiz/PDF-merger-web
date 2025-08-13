@@ -10,6 +10,7 @@ const clearAllBtn = document.getElementById('clearAllBtn');
 const fileCount = document.getElementById('fileCount');
 const toastContainer = document.getElementById('toastContainer');
 const loadingOverlay = document.getElementById('loadingOverlay');
+const browseBtn = document.getElementById('browseBtn'); // Added this line
 
 // Initialize app
 document.addEventListener('DOMContentLoaded', function() {
@@ -21,6 +22,9 @@ document.addEventListener('DOMContentLoaded', function() {
 function setupEventListeners() {
     // File input change
     fileInput.addEventListener('change', handleFileSelection);
+    
+    // Browse button click - THIS IS THE FIX
+    browseBtn.addEventListener('click', () => fileInput.click());
     
     // Drag and drop
     uploadArea.addEventListener('click', () => fileInput.click());
