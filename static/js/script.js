@@ -22,13 +22,8 @@ function setupEventListeners() {
     // File input change
     fileInput.addEventListener('change', handleFileSelection);
     
-    // Upload area click - SIMPLE approach
-    uploadArea.addEventListener('click', function(e) {
-        e.preventDefault();
-        fileInput.click();
-    });
-    
     // Drag and drop
+    uploadArea.addEventListener('click', () => fileInput.click());
     uploadArea.addEventListener('dragover', handleDragOver);
     uploadArea.addEventListener('dragleave', handleDragLeave);
     uploadArea.addEventListener('drop', handleDrop);
@@ -41,21 +36,7 @@ function setupEventListeners() {
 // Handle file selection
 function handleFileSelection(event) {
     const files = Array.from(event.target.files);
-    console.log('Files selected:', files.length);
-    
-    if (files.length > 0) {
-        // Filter PDF files
-        const pdfFiles = files.filter(file => file.type === 'application/pdf');
-        
-        if (pdfFiles.length !== files.length) {
-            showToast('Only PDF files are allowed', 'warning');
-        }
-        
-        if (pdfFiles.length > 0) {
-            uploadFiles(pdfFiles);
-        }
-    }
-    
+    uploadFiles(files);
     // Reset input
     event.target.value = '';
 }
@@ -93,7 +74,6 @@ function handleDrop(event) {
 async function uploadFiles(files) {
     if (files.length === 0) return;
     
-    console.log('Uploading files:', files);
     showLoading(true);
     
     const formData = new FormData();
@@ -117,7 +97,6 @@ async function uploadFiles(files) {
             showToast(data.message, 'error');
         }
     } catch (error) {
-        console.error('Upload error:', error);
         showToast('Error uploading files: ' + error.message, 'error');
     } finally {
         showLoading(false);

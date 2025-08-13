@@ -41,13 +41,13 @@
                     <div class="upload-icon">
                         <i class="fas fa-cloud-upload-alt"></i>
                     </div>
-                    <h3>Click here to select PDF files</h3>
-                    <p>Or drag and drop files • Maximum 50MB per file</p>
-                    <div class="upload-hint">
-                        <i class="fas fa-hand-pointer"></i>
-                        <span>Tap anywhere in this area</span>
-                    </div>
+                    <h3>Drop PDF files here or click to browse</h3>
+                    <p>Support for multiple files • Maximum 50MB per file</p>
                     <input type="file" id="fileInput" multiple accept=".pdf" hidden>
+                    <button class="browse-btn" onclick="document.getElementById('fileInput').click()">
+                        <i class="fas fa-folder-open"></i>
+                        Browse Files
+                    </button>
                 </div>
             </section>
 
